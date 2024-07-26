@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="index.css">
+        <link rel="icon" type="image/png" href="sprocket.png">
+        <title>Tree</title>
+        <meta content="EHouse Geneology" property="og:title" />
+        <meta content="Generates a tree representation of ehouse geneology" property="og:description" />
+        <meta content="https://monke.gay/ehouse/" property="og:url" />
+        <meta content="https://monke.gay/ehouse/sprocket.png" property="og:image" />
+        <meta content="#0054A6" data-react-helmet="true" name="theme-color" />
+    </head>
+    <body>
+        <div id="controlPanel">
+            <div id="controlPanelTitle">Control Panel</div>
+            <div class="rowButtons">
+                <div class="controlButton" id="showAll">Show All</div>
+                <div class="controlButton" id="showFreshmen">Show Freshmen</div>
+            </div>
+            <div class="rowButtons">
+                <div class="controlButton disabled" id="showLine">Show Line Of: </div>
+                <input type="text" id="nameSelector" value="Work In Progress" readonly>
+            </div>
+            <div id="meMyselfAndI">By Adam Schultzer</div>
+        </div>
+        <!-- <div class="grouping up">
+            <div class="horiGrouping">
+                <div class="grouping up">
+                    <div class="horiGrouping">
+                        
+                    </div>
+                    <div class="branchContainer leaf">
+                        <div class="branches"></div>
+                        <div class="upper">
+                            <div class="upperLeft"></div>
+                            <div class="upperRight"></div>
+                        </div>
+                        <div class="bottomName">Justin/Maddie Weinberger</div>
+                    </div>
+                </div>
+                <div class="grouping up">
+                    <div class="horiGrouping">
+                        
+                    </div>
+                    <div class="branchContainer leaf">
+                        <div class="branches"></div>
+                        <div class="upper">
+                            <div class="upperLeft"></div>
+                            <div class="upperRight"></div>
+                        </div>
+                        <div class="bottomName">Lucy Zhang</div>
+                    </div>
+                </div>
+            </div>
+            <div class="branchContainer">
+                <div class="branches"></div>
+                <div class="upper">
+                    <div class="upperLeft"></div>
+                    <div class="upperRight"></div>
+                </div>
+                <div class="bottomName">Declan Smalley</div>
+            </div>
+        </div> -->
+    </body>
+    <template id="groupTemplate"><div class="grouping">
+            <div class="branchContainer">
+                <div class="upperName">Top</div>
+                <div class="upper">
+                    <div class="upperLeft"></div>
+                    <div class="upperRight"></div>
+                </div>
+                <div class="bottom"></div>
+            </div>
+            <div class="horiGrouping">
+                
+            </div>
+        </div>
+    </template>
+    <!-- <template id="groupUpTemplate"><div class="grouping">
+            <div class="horiGrouping">
+                
+            </div>
+            <div class="branchContainer">
+                <div class="bottom"></div>
+                <div class="upper">
+                    <div class="upperLeft"></div>
+                    <div class="upperRight"></div>
+                </div>
+                <div class="bottomName">Bottom</div>
+            </div>
+        </div>
+    </template> -->
+    <script src="bundle.js"></script>
+</html>

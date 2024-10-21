@@ -5,7 +5,7 @@ let tsvURL = "output.tsv";
 const groupTemplate = document.querySelector("#groupTemplate") as HTMLTemplateElement;
 const groupUpTemplate = document.querySelector("#groupUpTemplate") as HTMLTemplateElement;
 
-const NUM_FRESHMEN = 32;
+const NUM_FRESHMEN = 22;
 
 let currentTrees: Tree[] = [];
 
@@ -63,11 +63,15 @@ class Tree {
 }
 
 function getEntry(name: string): Entry {
+    if(name.trim() == "") {
+	return null;
+    }
     for(let i = 0; i < entries.length; i++) {
         if(entries[i].name == name || entries[i].nickname == name) {
             return entries[i];
         }
     }
+    console.log("kung pow penis " + name);
     return null;
 }
 
@@ -326,7 +330,8 @@ function setMentees(lines: string[]): void {
         let menteeEntry = getEntry(vals[3].trim());
         if(!menteeEntry) {
             console.log("WEE WOO WEE WOO " + vals[3] + " NOT FOUND");
-        }
+	    console.log(menteeEntry);
+	}
         for(let j = 0; j < mentors.length; j++) {
             mentors[j].mentees.push(menteeEntry);
             menteeEntry.mentors.push(mentors[j]);
@@ -336,6 +341,7 @@ function setMentees(lines: string[]): void {
             menteeEntry.adopters.push(adopters[j]);
         }
     }
+    console.log(entries);
 }
 
 function recalculatePositions(): void {
@@ -457,9 +463,12 @@ function createTree(): void {
 }
 
 function createTreeFreshmen(): void {
+    console.log("SKIBIDI TOILET");
     for(let i = 0; i < entries.length; i++) {
         if(entries[i].mentors.length == 0 && entries[i].adopters.length == 0 && (entries[i].mentees.length > 0 || entries[i].adoptedMentees.length > 0)) {
-            let tree = new Tree(entries[i]);
+            console.log("new tree because");
+	    console.log(entries[i]);
+	    let tree = new Tree(entries[i]);
             let newGrouping = createBranch(entries[i], null, tree, false, true);
             tree.setRootBranch(newGrouping);
             for(let i = 0; i < tree.entries.length; i++) {
@@ -469,7 +478,9 @@ function createTreeFreshmen(): void {
                     break;
                 }
             }
-        }
+        } else {
+	    console.log(entries[i]);
+	}
     }
 }
 
@@ -499,6 +510,9 @@ function loadAllEntries(onfinish: () => void) {
             let lines = resp.split("\n");
             for(let i = lines.length - 1; i > 0; i--) { //does not use first line since it is column names
                 let vals = lines[i].split("\t");
+		if(vals[3].trim() == "") {
+		    continue;
+		}
                 let nickname = vals[2].trim() + " " + vals[0].trim();
                 let newEntry = {name: vals[3].trim(), nickname: nickname, mentors: [], adopters: [], mentees: [], adoptedMentees: [], isFreshman: i <= NUM_FRESHMEN} as Entry;
                 entries.push(newEntry);

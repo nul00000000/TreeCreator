@@ -5,7 +5,7 @@ let tsvURL = "output.tsv";
 const groupTemplate = document.querySelector("#groupTemplate") as HTMLTemplateElement;
 const groupUpTemplate = document.querySelector("#groupUpTemplate") as HTMLTemplateElement;
 
-const NUM_FRESHMEN = 22;
+const NUM_FRESHMEN = 24;
 
 let currentTrees: Tree[] = [];
 

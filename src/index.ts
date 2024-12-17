@@ -479,7 +479,7 @@ function recalculatePositionsLocal(top: HTMLDivElement): void {
 }
 
 function recalculateUpPositionsLocal(top: HTMLDivElement): void {
-    let itemsClear = top.querySelectorAll(":scope.grouping > .branchContainer:not(.leaf), :scope .grouping > .branchContainer:not(.leaf)");
+    let itemsClear = top.querySelectorAll(":scope.groupingUp > .branchContainer:not(.leaf), :scope .groupingUp > .branchContainer:not(.leaf)");
     let lines = top.querySelectorAll(":scope .midLine");
     for(let i = 0; i < itemsClear.length; i++) {
         (itemsClear[i] as HTMLDivElement).style.width = "";

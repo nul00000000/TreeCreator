@@ -86,8 +86,21 @@ function onNameClick(element: HTMLDivElement, entry: Entry) {
     while(rootGroup.parentElement.classList.contains("horiGrouping")) {
         rootGroup = rootGroup.parentElement.parentElement as HTMLDivElement;
     }
-    console.log(rootGroup);
     recalculatePositionsLocal(rootGroup);
+}
+
+function onUpNameClick(element: HTMLDivElement, entry: Entry) {
+    let group = element.parentElement.parentElement as HTMLDivElement;
+    if(group.classList.contains("collapsed")) {
+        element.parentElement.parentElement.classList.remove("collapsed");
+    } else {
+        element.parentElement.parentElement.classList.add("collapsed");
+    }
+    let rootGroup = group;
+    while(rootGroup.parentElement.classList.contains("horiGrouping")) {
+        rootGroup = rootGroup.parentElement.parentElement as HTMLDivElement;
+    }
+    recalculateUpPositionsLocal(rootGroup);
 }
 
 function createBranch(person: Entry, parent: Entry, tree: Tree, collapseAdopted = true, removeNonFreshmen = false): Branch {
@@ -248,59 +261,84 @@ function createBranch(person: Entry, parent: Entry, tree: Tree, collapseAdopted 
 //     }
 // }
 
-// function createUpBranch(person: Entry, parent: Entry, tree: Tree): Branch {
-//     let newGrouping = groupTemplate.content.cloneNode(true).firstChild as HTMLDivElement;
-//     newGrouping.childNodes[1].childNodes[1].textContent = person.name;
-//     if(person.mentees.length + person.adoptedMentees.length == 0) {
-//         (newGrouping.childNodes[1] as HTMLDivElement).classList.add("leaf");
-//         return {lvl: 0, element: newGrouping};
-//     } else {
-//         if(person.mentors.length > 0 && person.adopters.includes(parent)) {
-//             newGrouping.classList.add("collapsed");
-//         }
-//         (newGrouping.childNodes[1].childNodes[1] as HTMLDivElement).onclick = (e: MouseEvent) => {
-//             onNameClick(newGrouping.childNodes[1].childNodes[1] as HTMLDivElement, person);
-//         };
-//         if(person.mentees.length + person.adoptedMentees.length == 1) {
-//             (newGrouping.childNodes[1] as HTMLDivElement).classList.add("singleton");
-//         }
-//         let maxLvl = 0;
-//         let bottom = newGrouping.childNodes[1].childNodes[5];
-//         let index = 0;
-//         let adoptedStartIndex: number;
-//         for(let i = 0; i < person.mentees.length; i++) {
-//             let branch = createBranch(person.mentees[i], person, tree);
-//             if(branch.lvl > maxLvl) {
-//                 maxLvl = branch.lvl;
-//             }
-//             newGrouping.childNodes[3].appendChild(branch.element);
-//             index++;
-//         }
-//         adoptedStartIndex = index;
-//         for(let i = 0; i < person.adoptedMentees.length; i++) {
-//             let branch = createBranch(person.adoptedMentees[i], person, tree);
-//             if(branch.lvl > maxLvl) {
-//                 maxLvl = branch.lvl;
-//             }
-//             if(index == 0) {
-//                 (newGrouping.childNodes[1].childNodes[5] as HTMLDivElement).classList.add("dottedLeft");
-//             } else if(index == person.mentees.length + person.adoptedMentees.length - 1) {
-//                 (newGrouping.childNodes[1].childNodes[5] as HTMLDivElement).classList.add("dottedRight");
-//             }
-//             newGrouping.childNodes[3].appendChild(branch.element);
-//             index++;
-//         }
-//         for(let i = 1; i < index - 1; i++) {
-//             let line = document.createElement("div") as HTMLDivElement;
-//             line.classList.add("midLine");
-//             if(i >= adoptedStartIndex) {
-//                 line.classList.add("dottedLeft");
-//             }
-//             bottom.appendChild(line);
-//         }
-//         return {lvl: maxLvl + 1, element: newGrouping};
-//     }
-// }
+function createUpBranch(person: Entry, parent: Entry, tree: Tree, collapseAdopted: boolean, removeNonFreshmen: boolean): Branch {
+    let treeHasPerson = tree.entries.includes(person);
+    if(!treeHasPerson) {
+        tree.addEntry(person);
+    }
+    let newGrouping = groupUpTemplate.content.cloneNode(true).firstChild as HTMLDivElement;
+    newGrouping.children[1].children[2].textContent = person.name;
+    if(person.mentees.length + person.adoptedMentees.length == 0) {
+        (newGrouping.children[1] as HTMLDivElement).classList.add("leaf");
+        return new Branch(0, newGrouping, [person]);
+    } else {
+        if((collapseAdopted && person.mentors.length > 0 && person.adopters.includes(parent)) ||
+                (removeNonFreshmen && treeHasPerson && tree.root != person)) {
+            newGrouping.classList.add("collapsed");
+        }
+        (newGrouping.children[1].children[2] as HTMLDivElement).onclick = (e: MouseEvent) => {
+            onUpNameClick(newGrouping.children[1].children[2] as HTMLDivElement, person);
+        };
+        let maxLvl = 0;
+        let sillies: Entry[] = [person];
+        let bottom = newGrouping.children[1].children[0];
+        let index = 0;
+        let adoptedStartIndex: number;
+        for(let i = 0; i < person.mentees.length; i++) {
+            let branch = createUpBranch(person.mentees[i], person, tree, collapseAdopted, removeNonFreshmen);
+            if(!removeNonFreshmen || branch.hasFreshman()) {
+                if(branch.lvl > maxLvl) {
+                    maxLvl = branch.lvl;
+                }
+                for(let j = 0; j < branch.entries.length; j++) {
+                    if(!sillies.includes(branch.entries[j])) {
+                        sillies.push(branch.entries[j]);
+                    }
+                }
+                newGrouping.children[0].appendChild(branch.element);
+                index++;
+            }
+        }
+        adoptedStartIndex = index;
+        for(let i = 0; i < person.adoptedMentees.length; i++) {
+            let branch = createUpBranch(person.adoptedMentees[i], person, tree, collapseAdopted, removeNonFreshmen);
+            if(!removeNonFreshmen || branch.hasFreshman()) {
+                if(branch.lvl > maxLvl) {
+                    maxLvl = branch.lvl;
+                }
+                for(let j = 0; j < branch.entries.length; j++) {
+                    if(!sillies.includes(branch.entries[j])) {
+                        sillies.push(branch.entries[j]);
+                    }
+                }
+                if(index == 0) {
+                    (newGrouping.children[1].children[0] as HTMLDivElement).classList.add("dottedLeft");
+                }
+                newGrouping.children[0].appendChild(branch.element);
+                index++;
+            }
+        }
+        if(index == 1) {
+            (newGrouping.children[1] as HTMLDivElement).classList.add("singleton");
+            if(adoptedStartIndex == 0) {
+                // (newGrouping.children[0].children[1].children[0] as HTMLDivElement).classList.add("dottedRight");
+                // (newGrouping.children[0].children[1].children[1] as HTMLDivElement).classList.add("dottedLeft");
+                (newGrouping.children[1].children[0] as HTMLDivElement).classList.add("dottedRight");
+            }
+        } else if(index > adoptedStartIndex) {
+            (newGrouping.children[1].children[0] as HTMLDivElement).classList.add("dottedRight");
+        }
+        for(let i = 1; i < index - 1; i++) {
+            let line = document.createElement("div") as HTMLDivElement;
+            line.classList.add("midLine");
+            if(i >= adoptedStartIndex) {
+                line.classList.add("dottedLeft");
+            }
+            bottom.appendChild(line);
+        }
+        return new Branch(maxLvl + 1, newGrouping, sillies);
+    }
+}
 
 
 // all entries should already be added by the time this is run
@@ -370,7 +408,7 @@ function recalculatePositions(): void {
         }
     }
 
-    items = document.querySelectorAll(".grouping.up:not(.collapsed) > .branchContainer:not(.leaf)");
+    items = document.querySelectorAll(".groupingUp:not(.collapsed) > .branchContainer:not(.leaf)");
     for(let i = items.length - 1; i >= 0; i--) {
         let siblingHori = items[i].parentElement.children[0] as HTMLDivElement;
         if(items[i].classList.contains("singleton")) {
@@ -384,14 +422,11 @@ function recalculatePositions(): void {
             let box1 = bottom1.getBoundingClientRect();
             let box2 = bottom2.getBoundingClientRect();
             let boxItem = items[i].getBoundingClientRect();
-            console.log(((box2.x + box2.width / 2) - (box1.x + box1.width / 2)));
-            console.log(bottom2);
             (items[i] as HTMLDivElement).style.width = ((box2.x + box2.width / 2) - (box1.x + box1.width / 2)) + "px";
             (items[i] as HTMLDivElement).style.transform = "translateX(" + ((box1.x + box1.width / 2 + box2.x + box2.width / 2) / 2 - (boxItem.x + boxItem.width / 2)) + "px)";
-            console.log(items[i]);
         }
         for(let j = 1; j < siblingHori.children.length - 1; j++) {
-            let line = items[i].childNodes[5].childNodes[j - 1] as HTMLDivElement;
+            let line = items[i].children[0].children[j - 1] as HTMLDivElement;
             let box = (siblingHori.children[j].childNodes[1] as HTMLDivElement).getBoundingClientRect();
             let boxLine = line.getBoundingClientRect();
             line.style.transform = "translateX(" + ((box.x + box.width / 2) - (boxLine.x + boxLine.width / 2)) + "px)";
@@ -443,6 +478,42 @@ function recalculatePositionsLocal(top: HTMLDivElement): void {
     }
 }
 
+function recalculateUpPositionsLocal(top: HTMLDivElement): void {
+    let itemsClear = top.querySelectorAll(":scope.grouping > .branchContainer:not(.leaf), :scope .grouping > .branchContainer:not(.leaf)");
+    let lines = top.querySelectorAll(":scope .midLine");
+    for(let i = 0; i < itemsClear.length; i++) {
+        (itemsClear[i] as HTMLDivElement).style.width = "";
+        (itemsClear[i] as HTMLDivElement).style.transform = "";
+    }
+    for(let i = 0; i < lines.length; i++) {
+        (lines[i] as HTMLDivElement).style.transform = "";
+    }
+    let items = top.querySelectorAll(":scope.groupingUp:not(.collapsed) > .branchContainer:not(.leaf), :scope .groupingUp:not(.collapsed) > .branchContainer:not(.leaf)"); // this selector needs to include the top scope object itself 
+    for(let i = items.length - 1; i >= 0; i--) {
+        let siblingHori = items[i].parentElement.children[0] as HTMLDivElement;
+        if(items[i].classList.contains("singleton")) {
+            let bottom1 = siblingHori.children[0].children[1] as HTMLDivElement;
+            let box1 = bottom1.getBoundingClientRect();
+            let boxItem = items[i].getBoundingClientRect();
+            (items[i] as HTMLDivElement).style.transform = "translateX(" + ((box1.x + box1.width / 2) - (boxItem.x + boxItem.width / 2)) + "px)";
+        } else {
+            let bottom1 = siblingHori.children[0].children[1] as HTMLDivElement;
+            let bottom2 = siblingHori.children[siblingHori.children.length - 1].children[1] as HTMLDivElement;
+            let box1 = bottom1.getBoundingClientRect();
+            let box2 = bottom2.getBoundingClientRect();
+            let boxItem = items[i].getBoundingClientRect();
+            (items[i] as HTMLDivElement).style.width = ((box2.x + box2.width / 2) - (box1.x + box1.width / 2)) + "px";
+            (items[i] as HTMLDivElement).style.transform = "translateX(" + ((box1.x + box1.width / 2 + box2.x + box2.width / 2) / 2 - (boxItem.x + boxItem.width / 2)) + "px)";
+        }
+        for(let j = 1; j < siblingHori.children.length - 1; j++) {
+            let line = items[i].children[0].children[j - 1] as HTMLDivElement;
+            let box = (siblingHori.children[j].childNodes[1] as HTMLDivElement).getBoundingClientRect();
+            let boxLine = line.getBoundingClientRect();
+            line.style.transform = "translateX(" + ((box.x + box.width / 2) - (boxLine.x + boxLine.width / 2)) + "px)";
+        }
+    }
+}
+
 function clearTree(): void {
     currentTrees.forEach((tree: Tree) => {
         tree.rootBranch.element.remove();
@@ -467,8 +538,8 @@ function createTreeFreshmen(): void {
     for(let i = 0; i < entries.length; i++) {
         if(entries[i].mentors.length == 0 && entries[i].adopters.length == 0 && (entries[i].mentees.length > 0 || entries[i].adoptedMentees.length > 0)) {
             console.log("new tree because");
-	    console.log(entries[i]);
-	    let tree = new Tree(entries[i]);
+            console.log(entries[i]);
+            let tree = new Tree(entries[i]);
             let newGrouping = createBranch(entries[i], null, tree, false, true);
             tree.setRootBranch(newGrouping);
             for(let i = 0; i < tree.entries.length; i++) {
@@ -479,16 +550,17 @@ function createTreeFreshmen(): void {
                 }
             }
         } else {
-	    console.log(entries[i]);
-	}
+	        console.log(entries[i]);
+	    }
     }
 }
 
+//why is it just using the normal branching
 function createTreeFor(person: Entry): void {
     for(let i = 0; i < entries.length; i++) {
         if(entries[i].mentors.length == 0 && entries[i].adopters.length == 0 && (entries[i].mentees.length > 0 || entries[i].adoptedMentees.length > 0)) {
             let tree = new Tree(entries[i]);
-            let newGrouping = createBranch(entries[i], null, tree, false, true);
+            let newGrouping = createUpBranch(entries[i], null, tree, false, true);
             tree.setRootBranch(newGrouping);
             for(let i = 0; i < tree.entries.length; i++) {
                 if(tree.entries[i].isFreshman) {
@@ -510,9 +582,9 @@ function loadAllEntries(onfinish: () => void) {
             let lines = resp.split("\n");
             for(let i = lines.length - 1; i > 0; i--) { //does not use first line since it is column names
                 let vals = lines[i].split("\t");
-		if(vals[3].trim() == "") {
-		    continue;
-		}
+                if(lines[i] == "" || vals[3].trim() == "") {
+                    continue;
+                }
                 let nickname = vals[2].trim() + " " + vals[0].trim();
                 let newEntry = {name: vals[3].trim(), nickname: nickname, mentors: [], adopters: [], mentees: [], adoptedMentees: [], isFreshman: i <= NUM_FRESHMEN} as Entry;
                 entries.push(newEntry);
@@ -546,9 +618,13 @@ loadAllEntries(() => {
         createTreeFreshmen();
         recalculatePositions();
     };
-});
 
-recalculatePositions();
+    (document.querySelector("#showLine") as HTMLDivElement).onclick = () => {
+        clearTree();
+        createTreeFor(null);
+        recalculatePositions();
+    };
+});
 
 //@ts-ignore
 window.getEntry = getEntry;

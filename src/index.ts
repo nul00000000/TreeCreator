@@ -103,7 +103,7 @@ function onUpNameClick(element: HTMLDivElement, entry: Entry) {
 	recalculateUpPositionsLocal(rootGroup);
 }
 
-function createBranch(person: Entry, parent: Entry, tree: Tree, collapseAdopted = true, removeNonFreshmen = false): Branch {
+function createBranch(person: Entry, tree: Tree, collapseRepeats = true, removeNonFreshmen = false): Branch {
 	let treeHasPerson = tree.entries.includes(person);
 	if(!treeHasPerson) {
 		tree.addEntry(person);
@@ -114,8 +114,7 @@ function createBranch(person: Entry, parent: Entry, tree: Tree, collapseAdopted 
 		(newGrouping.childNodes[1] as HTMLDivElement).classList.add("leaf");
 		return new Branch(0, newGrouping, [person]);
 	} else {
-		if((collapseAdopted && person.mentors.length > 0 && person.adopters.includes(parent)) ||
-				(removeNonFreshmen && treeHasPerson && tree.root != person)) {
+		if(collapseRepeats && treeHasPerson && tree.root != person) {
 			newGrouping.classList.add("collapsed");
 		}
 		(newGrouping.childNodes[1].childNodes[1] as HTMLDivElement).onclick = (e: MouseEvent) => {
@@ -127,7 +126,7 @@ function createBranch(person: Entry, parent: Entry, tree: Tree, collapseAdopted 
 		let index = 0;
 		let adoptedStartIndex: number;
 		for(let i = 0; i < person.mentees.length; i++) {
-			let branch = createBranch(person.mentees[i], person, tree, collapseAdopted, removeNonFreshmen);
+			let branch = createBranch(person.mentees[i], tree, collapseRepeats, removeNonFreshmen);
 			if(!removeNonFreshmen || branch.hasFreshman()) {
 				if(branch.lvl > maxLvl) {
 					maxLvl = branch.lvl;
@@ -143,7 +142,7 @@ function createBranch(person: Entry, parent: Entry, tree: Tree, collapseAdopted 
 		}
 		adoptedStartIndex = index;
 		for(let i = 0; i < person.adoptedMentees.length; i++) {
-			let branch = createBranch(person.adoptedMentees[i], person, tree, collapseAdopted, removeNonFreshmen);
+			let branch = createBranch(person.adoptedMentees[i], tree, collapseRepeats, removeNonFreshmen);
 			if(!removeNonFreshmen || branch.hasFreshman()) {
 				if(branch.lvl > maxLvl) {
 					maxLvl = branch.lvl;
@@ -182,97 +181,18 @@ function createBranch(person: Entry, parent: Entry, tree: Tree, collapseAdopted 
 	}
 }
 
-// function createBranchFor(person: Entry, parent: Entry, tree: Tree, requires: Entry): Branch {
-//     let treeHasPerson = tree.entries.includes(person);
-//     if(!treeHasPerson) {
-//         tree.addEntry(person);
-//     }
-//     let newGrouping = groupTemplate.content.cloneNode(true).firstChild as HTMLDivElement;
-//     newGrouping.childNodes[1].childNodes[1].textContent = person.name;
-//     if(person.mentees.length + person.adoptedMentees.length == 0) {
-//         (newGrouping.childNodes[1] as HTMLDivElement).classList.add("leaf");
-//         return new Branch(0, newGrouping, [person]);
-//     } else {
-//         if((collapseAdopted && person.mentors.length > 0 && person.adopters.includes(parent)) ||
-//                 (removeNonFreshmen && treeHasPerson && tree.root != person)) {
-//             newGrouping.classList.add("collapsed");
-//         }
-//         (newGrouping.childNodes[1].childNodes[1] as HTMLDivElement).onclick = (e: MouseEvent) => {
-//             onNameClick(newGrouping.childNodes[1].childNodes[1] as HTMLDivElement, person);
-//         };
-//         let maxLvl = 0;
-//         let sillies: Entry[] = [person];
-//         let bottom = newGrouping.childNodes[1].childNodes[5];
-//         let index = 0;
-//         let adoptedStartIndex: number;
-//         for(let i = 0; i < person.mentees.length; i++) {
-//             let branch = createBranch(person.mentees[i], person, tree, collapseAdopted, removeNonFreshmen);
-//             if(!removeNonFreshmen || branch.hasFreshman()) {
-//                 if(branch.lvl > maxLvl) {
-//                     maxLvl = branch.lvl;
-//                 }
-//                 for(let j = 0; j < branch.entries.length; j++) {
-//                     if(!sillies.includes(branch.entries[j])) {
-//                         sillies.push(branch.entries[j]);
-//                     }
-//                 }
-//                 newGrouping.childNodes[3].appendChild(branch.element);
-//                 index++;
-//             }
-//         }
-//         adoptedStartIndex = index;
-//         for(let i = 0; i < person.adoptedMentees.length; i++) {
-//             let branch = createBranch(person.adoptedMentees[i], person, tree, collapseAdopted, removeNonFreshmen);
-//             if(!removeNonFreshmen || branch.hasFreshman()) {
-//                 if(branch.lvl > maxLvl) {
-//                     maxLvl = branch.lvl;
-//                 }
-//                 for(let j = 0; j < branch.entries.length; j++) {
-//                     if(!sillies.includes(branch.entries[j])) {
-//                         sillies.push(branch.entries[j]);
-//                     }
-//                 }
-//                 if(index == 0) {
-//                     (newGrouping.childNodes[1].childNodes[5] as HTMLDivElement).classList.add("dottedLeft");
-//                 }
-//                 newGrouping.childNodes[3].appendChild(branch.element);
-//                 index++;
-//             }
-//         }
-//         if(index == 1) {
-//             (newGrouping.childNodes[1] as HTMLDivElement).classList.add("singleton");
-//             if(adoptedStartIndex == 0) {
-//                 // (newGrouping.children[0].children[1].children[0] as HTMLDivElement).classList.add("dottedRight");
-//                 // (newGrouping.children[0].children[1].children[1] as HTMLDivElement).classList.add("dottedLeft");
-//                 (newGrouping.children[0].children[2] as HTMLDivElement).classList.add("dottedRight");
-//             }
-//         } else if(index > adoptedStartIndex) {
-//             (newGrouping.childNodes[1].childNodes[5] as HTMLDivElement).classList.add("dottedRight");
-//         }
-//         for(let i = 1; i < index - 1; i++) {
-//             let line = document.createElement("div") as HTMLDivElement;
-//             line.classList.add("midLine");
-//             if(i >= adoptedStartIndex) {
-//                 line.classList.add("dottedLeft");
-//             }
-//             bottom.appendChild(line);
-//         }
-//         return new Branch(maxLvl + 1, newGrouping, sillies);
-//     }
-// }
-
-function createUpBranch(person: Entry, child: Entry, tree: Tree, collapseAdopted: boolean): Branch {
+function createUpBranch(person: Entry, tree: Tree, collapseRepeats: boolean): Branch {
 	let treeHasPerson = tree.entries.includes(person);
 	if(!treeHasPerson) {
 		tree.addEntry(person);
 	}
 	let newGrouping = groupUpTemplate.content.cloneNode(true).firstChild as HTMLDivElement;
 	newGrouping.children[1].children[2].textContent = person.name;
-	if(person.mentees.length + person.adoptedMentees.length == 0) {
+	if(person.mentors.length + person.adopters.length == 0) {
 		(newGrouping.children[1] as HTMLDivElement).classList.add("leaf");
 		return new Branch(0, newGrouping, [person]);
 	} else {
-		if((collapseAdopted && person.mentors.length > 0 && person.adopters.includes(child))) {
+		if(collapseRepeats && treeHasPerson && tree.root != person) {
 			newGrouping.classList.add("collapsed");
 		}
 		(newGrouping.children[1].children[2] as HTMLDivElement).onclick = (e: MouseEvent) => {
@@ -283,8 +203,8 @@ function createUpBranch(person: Entry, child: Entry, tree: Tree, collapseAdopted
 		let bottom = newGrouping.children[1].children[0];
 		let index = 0;
 		let adoptedStartIndex: number;
-		for(let i = 0; i < person.mentees.length; i++) {
-			let branch = createUpBranch(person.mentees[i], person, tree, collapseAdopted);
+		for(let i = 0; i < person.mentors.length; i++) {
+			let branch = createUpBranch(person.mentors[i], tree, collapseRepeats);
 			if(branch.lvl > maxLvl) {
 				maxLvl = branch.lvl;
 			}
@@ -297,8 +217,8 @@ function createUpBranch(person: Entry, child: Entry, tree: Tree, collapseAdopted
 			index++;
 		}
 		adoptedStartIndex = index;
-		for(let i = 0; i < person.adoptedMentees.length; i++) {
-			let branch = createUpBranch(person.adoptedMentees[i], person, tree, collapseAdopted);
+		for(let i = 0; i < person.adopters.length; i++) {
+			let branch = createUpBranch(person.adopters[i], tree, collapseRepeats);
 			if(branch.lvl > maxLvl) {
 				maxLvl = branch.lvl;
 			}
@@ -514,6 +434,10 @@ function clearTree(): void {
 	currentTrees.forEach((tree: Tree) => {
 		tree.rootBranch.element.remove();
 	});
+	let treeJoiner = document.querySelector("#treeJoiner");
+	if(treeJoiner) {
+		treeJoiner.remove();
+	}
 	currentTrees = [];
 }
 
@@ -521,7 +445,7 @@ function createTree(): void {
 	for(let i = 0; i < entries.length; i++) {
 		if(entries[i].mentors.length == 0 && entries[i].adopters.length == 0 && (entries[i].mentees.length > 0 || entries[i].adoptedMentees.length > 0)) {
 			let tree = new Tree(entries[i]);
-			let newGrouping = createBranch(entries[i], null, tree);
+			let newGrouping = createBranch(entries[i], tree);
 			tree.setRootBranch(newGrouping);
 			currentTrees.push(tree);
 			document.querySelector("body").appendChild(newGrouping.element);
@@ -536,7 +460,7 @@ function createTreeFreshmen(): void {
 			console.log("new tree because");
 			console.log(entries[i]);
 			let tree = new Tree(entries[i]);
-			let newGrouping = createBranch(entries[i], null, tree, false, true);
+			let newGrouping = createBranch(entries[i], tree, true, true);
 			tree.setRootBranch(newGrouping);
 			for(let i = 0; i < tree.entries.length; i++) {
 				if(tree.entries[i].isFreshman) {
@@ -553,20 +477,23 @@ function createTreeFreshmen(): void {
 
 //why is it just using the normal branching
 function createTreeFor(person: Entry): void {
-	for(let i = 0; i < entries.length; i++) {
-		if(entries[i].mentors.length == 0 && entries[i].adopters.length == 0 && (entries[i].mentees.length > 0 || entries[i].adoptedMentees.length > 0)) {
-			let tree = new Tree(entries[i]);
-			let newGrouping = createUpBranch(entries[i], null, tree, false);
-			tree.setRootBranch(newGrouping);
-			for(let i = 0; i < tree.entries.length; i++) {
-				if(tree.entries[i].isFreshman) {
-					currentTrees.push(tree);
-					document.querySelector("body").appendChild(newGrouping.element);
-					break;
-				}
-			}
-		}
-	}
+	let treeUp = new Tree(person);
+	let newGroupingUp = createUpBranch(person, treeUp, true);
+	treeUp.setRootBranch(newGroupingUp);
+
+	let treeDown = new Tree(person);
+	let newGroupingDown = createBranch(person, treeDown, true);
+	treeDown.setRootBranch(newGroupingDown);
+
+	let treeJoiner = document.createElement("div");
+	treeJoiner.id = "treeJoiner";
+
+	
+
+	treeJoiner.appendChild(newGroupingUp.element);
+	treeJoiner.appendChild(newGroupingDown.element);
+
+	document.querySelector("body").appendChild(treeJoiner);
 }
 
 function loadAllEntries(onfinish: () => void) {
@@ -617,7 +544,7 @@ loadAllEntries(() => {
 
 	(document.querySelector("#showLine") as HTMLDivElement).onclick = () => {
 		clearTree();
-		createTreeFor(null);
+		createTreeFor(getEntry("Adam Schultzer"));
 		recalculatePositions();
 	};
 });
